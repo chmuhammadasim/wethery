@@ -32,17 +32,28 @@ class _WeatherScreenState extends State<WeatherScreen> {
   String city = 'Paris';
   Map<String, dynamic>? weatherData;
   final TextEditingController cityController = TextEditingController();
+  bool isLoading = false;
+  String errorMessage = '';
 
   Future<void> fetchWeather(String city) async {
+    setState(() {
+      isLoading = true;
+      errorMessage = '';
+    });
+
     final url = 'http://api.weatherapi.com/v1/current.json?key=$apiKey&q=$city';
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
       setState(() {
         weatherData = json.decode(response.body);
+        isLoading = false;
       });
     } else {
-      throw Exception('Failed to load weather data');
+      setState(() {
+        errorMessage = 'Failed to load weather data';
+        isLoading = false;
+      });
     }
   }
 
@@ -74,104 +85,109 @@ class _WeatherScreenState extends State<WeatherScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    setState(() {
-                      city = cityController.text;
-                    });
-                    fetchWeather(city);
+                    if (cityController.text.isNotEmpty) {
+                      setState(() {
+                        city = cityController.text;
+                      });
+                      fetchWeather(city);
+                    }
                   },
                   child: const Text('Get Weather'),
                 ),
               ],
             ),
           ),
-          weatherData == null
-              ? const Center(child: CircularProgressIndicator())
-              : Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildWeatherInfoRow(
-                          'Location:',
-                          '${weatherData!['location']['name']}, ${weatherData!['location']['region']}, ${weatherData!['location']['country']}',
-                        ),
-                        _buildWeatherInfoRow(
-                          'Latitude:',
-                          '${weatherData!['location']['lat']}',
-                        ),
-                        _buildWeatherInfoRow(
-                          'Longitude:',
-                          '${weatherData!['location']['lon']}',
-                        ),
-                        _buildWeatherInfoRow(
-                          'Local Time:',
-                          '${weatherData!['location']['localtime']}',
-                        ),
-                        const SizedBox(height: 20),
-                        _buildWeatherInfoRow(
-                          'Temperature:',
-                          '${weatherData!['current']['temp_c']} °C / ${weatherData!['current']['temp_f']} °F',
-                        ),
-                        _buildWeatherInfoRow(
-                          'Condition:',
-                          '${weatherData!['current']['condition']['text']}',
-                        ),
-                        Image.network(
-                          'https:${weatherData!['current']['condition']['icon']}',
-                        ),
-                        _buildWeatherInfoRow(
-                          'Wind:',
-                          '${weatherData!['current']['wind_mph']} mph / ${weatherData!['current']['wind_kph']} kph, Direction: ${weatherData!['current']['wind_dir']}',
-                        ),
-                        _buildWeatherInfoRow(
-                          'Pressure:',
-                          '${weatherData!['current']['pressure_mb']} mb / ${weatherData!['current']['pressure_in']} in',
-                        ),
-                        _buildWeatherInfoRow(
-                          'Precipitation:',
-                          '${weatherData!['current']['precip_mm']} mm / ${weatherData!['current']['precip_in']} in',
-                        ),
-                        _buildWeatherInfoRow(
-                          'Humidity:',
-                          '${weatherData!['current']['humidity']}%',
-                        ),
-                        _buildWeatherInfoRow(
-                          'Cloud:',
-                          '${weatherData!['current']['cloud']}%',
-                        ),
-                        _buildWeatherInfoRow(
-                          'Feels Like:',
-                          '${weatherData!['current']['feelslike_c']} °C / ${weatherData!['current']['feelslike_f']} °F',
-                        ),
-                        _buildWeatherInfoRow(
-                          'Wind Chill:',
-                          '${weatherData!['current']['windchill_c']} °C / ${weatherData!['current']['windchill_f']} °F',
-                        ),
-                        _buildWeatherInfoRow(
-                          'Heat Index:',
-                          '${weatherData!['current']['heatindex_c']} °C / ${weatherData!['current']['heatindex_f']} °F',
-                        ),
-                        _buildWeatherInfoRow(
-                          'Dew Point:',
-                          '${weatherData!['current']['dewpoint_c']} °C / ${weatherData!['current']['dewpoint_f']} °F',
-                        ),
-                        _buildWeatherInfoRow(
-                          'Visibility:',
-                          '${weatherData!['current']['vis_km']} km / ${weatherData!['current']['vis_miles']} miles',
-                        ),
-                        _buildWeatherInfoRow(
-                          'UV Index:',
-                          '${weatherData!['current']['uv']}',
-                        ),
-                        _buildWeatherInfoRow(
-                          'Gust:',
-                          '${weatherData!['current']['gust_mph']} mph / ${weatherData!['current']['gust_kph']} kph',
-                        ),
-                      ],
+          if (isLoading)
+            const Center(child: CircularProgressIndicator())
+          else if (errorMessage.isNotEmpty)
+            Center(child: Text(errorMessage))
+          else if (weatherData != null)
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildWeatherInfoRow(
+                      'Location:',
+                      '${weatherData!['location']['name']}, ${weatherData!['location']['region']}, ${weatherData!['location']['country']}',
                     ),
-                  ),
+                    _buildWeatherInfoRow(
+                      'Latitude:',
+                      '${weatherData!['location']['lat']}',
+                    ),
+                    _buildWeatherInfoRow(
+                      'Longitude:',
+                      '${weatherData!['location']['lon']}',
+                    ),
+                    _buildWeatherInfoRow(
+                      'Local Time:',
+                      '${weatherData!['location']['localtime']}',
+                    ),
+                    const SizedBox(height: 20),
+                    _buildWeatherInfoRow(
+                      'Temperature:',
+                      '${weatherData!['current']['temp_c']} °C / ${weatherData!['current']['temp_f']} °F',
+                    ),
+                    _buildWeatherInfoRow(
+                      'Condition:',
+                      '${weatherData!['current']['condition']['text']}',
+                    ),
+                    Image.network(
+                      'https:${weatherData!['current']['condition']['icon']}',
+                    ),
+                    _buildWeatherInfoRow(
+                      'Wind:',
+                      '${weatherData!['current']['wind_mph']} mph / ${weatherData!['current']['wind_kph']} kph, Direction: ${weatherData!['current']['wind_dir']}',
+                    ),
+                    _buildWeatherInfoRow(
+                      'Pressure:',
+                      '${weatherData!['current']['pressure_mb']} mb / ${weatherData!['current']['pressure_in']} in',
+                    ),
+                    _buildWeatherInfoRow(
+                      'Precipitation:',
+                      '${weatherData!['current']['precip_mm']} mm / ${weatherData!['current']['precip_in']} in',
+                    ),
+                    _buildWeatherInfoRow(
+                      'Humidity:',
+                      '${weatherData!['current']['humidity']}%',
+                    ),
+                    _buildWeatherInfoRow(
+                      'Cloud:',
+                      '${weatherData!['current']['cloud']}%',
+                    ),
+                    _buildWeatherInfoRow(
+                      'Feels Like:',
+                      '${weatherData!['current']['feelslike_c']} °C / ${weatherData!['current']['feelslike_f']} °F',
+                    ),
+                    _buildWeatherInfoRow(
+                      'Wind Chill:',
+                      '${weatherData!['current']['windchill_c']} °C / ${weatherData!['current']['windchill_f']} °F',
+                    ),
+                    _buildWeatherInfoRow(
+                      'Heat Index:',
+                      '${weatherData!['current']['heatindex_c']} °C / ${weatherData!['current']['heatindex_f']} °F',
+                    ),
+                    _buildWeatherInfoRow(
+                      'Dew Point:',
+                      '${weatherData!['current']['dewpoint_c']} °C / ${weatherData!['current']['dewpoint_f']} °F',
+                    ),
+                    _buildWeatherInfoRow(
+                      'Visibility:',
+                      '${weatherData!['current']['vis_km']} km / ${weatherData!['current']['vis_miles']} miles',
+                    ),
+                    _buildWeatherInfoRow(
+                      'UV Index:',
+                      '${weatherData!['current']['uv']}',
+                    ),
+                    _buildWeatherInfoRow(
+                      'Gust:',
+                      '${weatherData!['current']['gust_mph']} mph / ${weatherData!['current']['gust_kph']} kph',
+                    ),
+                  ],
                 ),
+              ),
+            ),
         ],
       ),
     );
