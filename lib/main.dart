@@ -28,10 +28,10 @@ class WeatherScreen extends StatefulWidget {
 }
 
 class _WeatherScreenState extends State<WeatherScreen> {
-  String apiKey = '1f1c64eb11a3436180c185318242007';
+  final String apiKey = '1f1c64eb11a3436180c185318242007';
   String city = 'Paris';
-  late Map<String, dynamic> weatherData;
-  TextEditingController cityController = TextEditingController();
+  Map<String, dynamic>? weatherData;
+  final TextEditingController cityController = TextEditingController();
 
   Future<void> fetchWeather(String city) async {
     final url = 'http://api.weatherapi.com/v1/current.json?key=$apiKey&q=$city';
@@ -92,81 +92,106 @@ class _WeatherScreenState extends State<WeatherScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Location: ${weatherData['location']['name']}, ${weatherData['location']['region']}, ${weatherData['location']['country']}',
-                          style: const TextStyle(fontSize: 20),
+                        _buildWeatherInfoRow(
+                          'Location:',
+                          '${weatherData!['location']['name']}, ${weatherData!['location']['region']}, ${weatherData!['location']['country']}',
                         ),
-                        Text(
-                          'Latitude: ${weatherData['location']['lat']}, Longitude: ${weatherData['location']['lon']}',
-                          style: const TextStyle(fontSize: 18),
+                        _buildWeatherInfoRow(
+                          'Latitude:',
+                          '${weatherData!['location']['lat']}',
                         ),
-                        Text(
-                          'Local Time: ${weatherData['location']['localtime']}',
-                          style: const TextStyle(fontSize: 18),
+                        _buildWeatherInfoRow(
+                          'Longitude:',
+                          '${weatherData!['location']['lon']}',
+                        ),
+                        _buildWeatherInfoRow(
+                          'Local Time:',
+                          '${weatherData!['location']['localtime']}',
                         ),
                         const SizedBox(height: 20),
-                        Text(
-                          'Temperature: ${weatherData['current']['temp_c']} °C / ${weatherData['current']['temp_f']} °F',
-                          style: const TextStyle(fontSize: 18),
+                        _buildWeatherInfoRow(
+                          'Temperature:',
+                          '${weatherData!['current']['temp_c']} °C / ${weatherData!['current']['temp_f']} °F',
                         ),
-                        Text(
-                          'Condition: ${weatherData['current']['condition']['text']}',
-                          style: const TextStyle(fontSize: 18),
+                        _buildWeatherInfoRow(
+                          'Condition:',
+                          '${weatherData!['current']['condition']['text']}',
                         ),
                         Image.network(
-                            'https:${weatherData['current']['condition']['icon']}'),
-                        Text(
-                          'Wind: ${weatherData['current']['wind_mph']} mph / ${weatherData['current']['wind_kph']} kph, Direction: ${weatherData['current']['wind_dir']}',
-                          style: const TextStyle(fontSize: 18),
+                          'https:${weatherData!['current']['condition']['icon']}',
                         ),
-                        Text(
-                          'Pressure: ${weatherData['current']['pressure_mb']} mb / ${weatherData['current']['pressure_in']} in',
-                          style: const TextStyle(fontSize: 18),
+                        _buildWeatherInfoRow(
+                          'Wind:',
+                          '${weatherData!['current']['wind_mph']} mph / ${weatherData!['current']['wind_kph']} kph, Direction: ${weatherData!['current']['wind_dir']}',
                         ),
-                        Text(
-                          'Precipitation: ${weatherData['current']['precip_mm']} mm / ${weatherData['current']['precip_in']} in',
-                          style: const TextStyle(fontSize: 18),
+                        _buildWeatherInfoRow(
+                          'Pressure:',
+                          '${weatherData!['current']['pressure_mb']} mb / ${weatherData!['current']['pressure_in']} in',
                         ),
-                        Text(
-                          'Humidity: ${weatherData['current']['humidity']}%',
-                          style: const TextStyle(fontSize: 18),
+                        _buildWeatherInfoRow(
+                          'Precipitation:',
+                          '${weatherData!['current']['precip_mm']} mm / ${weatherData!['current']['precip_in']} in',
                         ),
-                        Text(
-                          'Cloud: ${weatherData['current']['cloud']}%',
-                          style: const TextStyle(fontSize: 18),
+                        _buildWeatherInfoRow(
+                          'Humidity:',
+                          '${weatherData!['current']['humidity']}%',
                         ),
-                        Text(
-                          'Feels Like: ${weatherData['current']['feelslike_c']} °C / ${weatherData['current']['feelslike_f']} °F',
-                          style: const TextStyle(fontSize: 18),
+                        _buildWeatherInfoRow(
+                          'Cloud:',
+                          '${weatherData!['current']['cloud']}%',
                         ),
-                        Text(
-                          'Wind Chill: ${weatherData['current']['windchill_c']} °C / ${weatherData['current']['windchill_f']} °F',
-                          style: const TextStyle(fontSize: 18),
+                        _buildWeatherInfoRow(
+                          'Feels Like:',
+                          '${weatherData!['current']['feelslike_c']} °C / ${weatherData!['current']['feelslike_f']} °F',
                         ),
-                        Text(
-                          'Heat Index: ${weatherData['current']['heatindex_c']} °C / ${weatherData['current']['heatindex_f']} °F',
-                          style: const TextStyle(fontSize: 18),
+                        _buildWeatherInfoRow(
+                          'Wind Chill:',
+                          '${weatherData!['current']['windchill_c']} °C / ${weatherData!['current']['windchill_f']} °F',
                         ),
-                        Text(
-                          'Dew Point: ${weatherData['current']['dewpoint_c']} °C / ${weatherData['current']['dewpoint_f']} °F',
-                          style: const TextStyle(fontSize: 18),
+                        _buildWeatherInfoRow(
+                          'Heat Index:',
+                          '${weatherData!['current']['heatindex_c']} °C / ${weatherData!['current']['heatindex_f']} °F',
                         ),
-                        Text(
-                          'Visibility: ${weatherData['current']['vis_km']} km / ${weatherData['current']['vis_miles']} miles',
-                          style: const TextStyle(fontSize: 18),
+                        _buildWeatherInfoRow(
+                          'Dew Point:',
+                          '${weatherData!['current']['dewpoint_c']} °C / ${weatherData!['current']['dewpoint_f']} °F',
                         ),
-                        Text(
-                          'UV Index: ${weatherData['current']['uv']}',
-                          style: const TextStyle(fontSize: 18),
+                        _buildWeatherInfoRow(
+                          'Visibility:',
+                          '${weatherData!['current']['vis_km']} km / ${weatherData!['current']['vis_miles']} miles',
                         ),
-                        Text(
-                          'Gust: ${weatherData['current']['gust_mph']} mph / ${weatherData['current']['gust_kph']} kph',
-                          style: const TextStyle(fontSize: 18),
+                        _buildWeatherInfoRow(
+                          'UV Index:',
+                          '${weatherData!['current']['uv']}',
+                        ),
+                        _buildWeatherInfoRow(
+                          'Gust:',
+                          '${weatherData!['current']['gust_mph']} mph / ${weatherData!['current']['gust_kph']} kph',
                         ),
                       ],
                     ),
                   ),
                 ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeatherInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          Text(
+            '$label ',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 18),
+            ),
+          ),
         ],
       ),
     );
