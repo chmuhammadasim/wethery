@@ -1,6 +1,6 @@
 name: wethery
 description: "A new Flutter project."
-publish_to: 'none'
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 version: 1.0.0+1
 
@@ -24,6 +24,8 @@ dependencies:
   http: ^1.2.2
   provider: ^6.1.2
   cached_network_image: ^3.3.1
+  animated_text_kit: ^4.2.2
+  geolocator: ^7.0.0-nullsafety.5
 
 dev_dependencies:
   flutter_test:

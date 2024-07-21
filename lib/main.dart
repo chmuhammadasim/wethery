@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:geolocator/geolocator.dart';
 
 void main() => runApp(const MyApp());
 
@@ -27,13 +28,16 @@ class WeatherScreen extends StatefulWidget {
   WeatherScreenState createState() => WeatherScreenState();
 }
 
-class WeatherScreenState extends State<WeatherScreen> {
+class WeatherScreenState extends State<WeatherScreen>
+    with SingleTickerProviderStateMixin {
   final String apiKey = '1f1c64eb11a3436180c185318242007';
   String city = 'Paris';
   Map<String, dynamic>? weatherData;
   final TextEditingController cityController = TextEditingController();
   bool isLoading = false;
   String errorMessage = '';
+  late AnimationController _animationController;
+  late Animation<double> _animation;
 
   Future<void> fetchWeather(String city) async {
     setState(() {
@@ -48,6 +52,7 @@ class WeatherScreenState extends State<WeatherScreen> {
       setState(() {
         weatherData = json.decode(response.body);
         isLoading = false;
+        _animationController.forward(from: 0.0);
       });
     } else {
       setState(() {
@@ -57,10 +62,57 @@ class WeatherScreenState extends State<WeatherScreen> {
     }
   }
 
+  Future<void> fetchWeatherByLocation(Position position) async {
+    final String location = '${position.latitude},${position.longitude}';
+    await fetchWeather(location);
+  }
+
+  Future<void> _getCurrentLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return Future.error('Location services are disabled.');
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return Future.error('Location permissions are denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+
+    Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+    await fetchWeatherByLocation(position);
+  }
+
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(seconds: 1),
+      vsync: this,
+    );
+    _animation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeIn,
+    );
     fetchWeather(city);
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    cityController.dispose();
+    super.dispose();
   }
 
   @override
@@ -68,6 +120,12 @@ class WeatherScreenState extends State<WeatherScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Weather in $city'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.location_on),
+            onPressed: _getCurrentLocation,
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -105,86 +163,89 @@ class WeatherScreenState extends State<WeatherScreen> {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildWeatherInfoRow(
-                      'Location:',
-                      '${weatherData!['location']['name']}, ${weatherData!['location']['region']}, ${weatherData!['location']['country']}',
-                    ),
-                    _buildWeatherInfoRow(
-                      'Latitude:',
-                      '${weatherData!['location']['lat']}',
-                    ),
-                    _buildWeatherInfoRow(
-                      'Longitude:',
-                      '${weatherData!['location']['lon']}',
-                    ),
-                    _buildWeatherInfoRow(
-                      'Local Time:',
-                      '${weatherData!['location']['localtime']}',
-                    ),
-                    const SizedBox(height: 20),
-                    _buildWeatherInfoRow(
-                      'Temperature:',
-                      '${weatherData!['current']['temp_c']} °C / ${weatherData!['current']['temp_f']} °F',
-                    ),
-                    _buildWeatherInfoRow(
-                      'Condition:',
-                      '${weatherData!['current']['condition']['text']}',
-                    ),
-                    Image.network(
-                      'https:${weatherData!['current']['condition']['icon']}',
-                    ),
-                    _buildWeatherInfoRow(
-                      'Wind:',
-                      '${weatherData!['current']['wind_mph']} mph / ${weatherData!['current']['wind_kph']} kph, Direction: ${weatherData!['current']['wind_dir']}',
-                    ),
-                    _buildWeatherInfoRow(
-                      'Pressure:',
-                      '${weatherData!['current']['pressure_mb']} mb / ${weatherData!['current']['pressure_in']} in',
-                    ),
-                    _buildWeatherInfoRow(
-                      'Precipitation:',
-                      '${weatherData!['current']['precip_mm']} mm / ${weatherData!['current']['precip_in']} in',
-                    ),
-                    _buildWeatherInfoRow(
-                      'Humidity:',
-                      '${weatherData!['current']['humidity']}%',
-                    ),
-                    _buildWeatherInfoRow(
-                      'Cloud:',
-                      '${weatherData!['current']['cloud']}%',
-                    ),
-                    _buildWeatherInfoRow(
-                      'Feels Like:',
-                      '${weatherData!['current']['feelslike_c']} °C / ${weatherData!['current']['feelslike_f']} °F',
-                    ),
-                    _buildWeatherInfoRow(
-                      'Wind Chill:',
-                      '${weatherData!['current']['windchill_c']} °C / ${weatherData!['current']['windchill_f']} °F',
-                    ),
-                    _buildWeatherInfoRow(
-                      'Heat Index:',
-                      '${weatherData!['current']['heatindex_c']} °C / ${weatherData!['current']['heatindex_f']} °F',
-                    ),
-                    _buildWeatherInfoRow(
-                      'Dew Point:',
-                      '${weatherData!['current']['dewpoint_c']} °C / ${weatherData!['current']['dewpoint_f']} °F',
-                    ),
-                    _buildWeatherInfoRow(
-                      'Visibility:',
-                      '${weatherData!['current']['vis_km']} km / ${weatherData!['current']['vis_miles']} miles',
-                    ),
-                    _buildWeatherInfoRow(
-                      'UV Index:',
-                      '${weatherData!['current']['uv']}',
-                    ),
-                    _buildWeatherInfoRow(
-                      'Gust:',
-                      '${weatherData!['current']['gust_mph']} mph / ${weatherData!['current']['gust_kph']} kph',
-                    ),
-                  ],
+                child: FadeTransition(
+                  opacity: _animation,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildWeatherInfoRow(
+                        'Location:',
+                        '${weatherData!['location']['name']}, ${weatherData!['location']['region']}, ${weatherData!['location']['country']}',
+                      ),
+                      _buildWeatherInfoRow(
+                        'Latitude:',
+                        '${weatherData!['location']['lat']}',
+                      ),
+                      _buildWeatherInfoRow(
+                        'Longitude:',
+                        '${weatherData!['location']['lon']}',
+                      ),
+                      _buildWeatherInfoRow(
+                        'Local Time:',
+                        '${weatherData!['location']['localtime']}',
+                      ),
+                      const SizedBox(height: 20),
+                      _buildWeatherInfoRow(
+                        'Temperature:',
+                        '${weatherData!['current']['temp_c']} °C / ${weatherData!['current']['temp_f']} °F',
+                      ),
+                      _buildWeatherInfoRow(
+                        'Condition:',
+                        '${weatherData!['current']['condition']['text']}',
+                      ),
+                      Image.network(
+                        'https:${weatherData!['current']['condition']['icon']}',
+                      ),
+                      _buildWeatherInfoRow(
+                        'Wind:',
+                        '${weatherData!['current']['wind_mph']} mph / ${weatherData!['current']['wind_kph']} kph, Direction: ${weatherData!['current']['wind_dir']}',
+                      ),
+                      _buildWeatherInfoRow(
+                        'Pressure:',
+                        '${weatherData!['current']['pressure_mb']} mb / ${weatherData!['current']['pressure_in']} in',
+                      ),
+                      _buildWeatherInfoRow(
+                        'Precipitation:',
+                        '${weatherData!['current']['precip_mm']} mm / ${weatherData!['current']['precip_in']} in',
+                      ),
+                      _buildWeatherInfoRow(
+                        'Humidity:',
+                        '${weatherData!['current']['humidity']}%',
+                      ),
+                      _buildWeatherInfoRow(
+                        'Cloud:',
+                        '${weatherData!['current']['cloud']}%',
+                      ),
+                      _buildWeatherInfoRow(
+                        'Feels Like:',
+                        '${weatherData!['current']['feelslike_c']} °C / ${weatherData!['current']['feelslike_f']} °F',
+                      ),
+                      _buildWeatherInfoRow(
+                        'Wind Chill:',
+                        '${weatherData!['current']['windchill_c']} °C / ${weatherData!['current']['windchill_f']} °F',
+                      ),
+                      _buildWeatherInfoRow(
+                        'Heat Index:',
+                        '${weatherData!['current']['heatindex_c']} °C / ${weatherData!['current']['heatindex_f']} °F',
+                      ),
+                      _buildWeatherInfoRow(
+                        'Dew Point:',
+                        '${weatherData!['current']['dewpoint_c']} °C / ${weatherData!['current']['dewpoint_f']} °F',
+                      ),
+                      _buildWeatherInfoRow(
+                        'Visibility:',
+                        '${weatherData!['current']['vis_km']} km / ${weatherData!['current']['vis_miles']} miles',
+                      ),
+                      _buildWeatherInfoRow(
+                        'UV Index:',
+                        '${weatherData!['current']['uv']}',
+                      ),
+                      _buildWeatherInfoRow(
+                        'Gust:',
+                        '${weatherData!['current']['gust_mph']} mph / ${weatherData!['current']['gust_kph']} kph',
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
