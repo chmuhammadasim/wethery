@@ -38,6 +38,7 @@ class WeatherScreenState extends State<WeatherScreen>
   String errorMessage = '';
   late AnimationController _animationController;
   late Animation<double> _animation;
+  List<Map<String, dynamic>> savedCitiesWeatherData = [];
 
   Future<void> fetchWeather(String city) async {
     setState(() {
@@ -115,141 +116,170 @@ class WeatherScreenState extends State<WeatherScreen>
     super.dispose();
   }
 
+  void _saveCurrentCityWeather() {
+    if (weatherData != null) {
+      setState(() {
+        savedCitiesWeatherData.add(weatherData!);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Weather in $city'),
+        title: const Text('Weather App'),
         actions: [
           IconButton(
             icon: const Icon(Icons.location_on),
             onPressed: _getCurrentLocation,
           ),
+          IconButton(
+            icon: const Icon(Icons.save),
+            onPressed: _saveCurrentCityWeather,
+          ),
         ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: cityController,
-                    decoration: const InputDecoration(
-                      labelText: 'Enter city name',
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: cityController,
+                      decoration: const InputDecoration(
+                        labelText: 'Enter city name',
+                      ),
                     ),
                   ),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (cityController.text.isNotEmpty) {
-                      setState(() {
-                        city = cityController.text;
-                      });
-                      fetchWeather(city);
-                    }
-                  },
-                  child: const Text('Get Weather'),
-                ),
-              ],
+                  ElevatedButton(
+                    onPressed: () {
+                      if (cityController.text.isNotEmpty) {
+                        setState(() {
+                          city = cityController.text;
+                        });
+                        fetchWeather(city);
+                      }
+                    },
+                    child: const Text('Get Weather'),
+                  ),
+                ],
+              ),
             ),
           ),
           if (isLoading)
-            const Center(child: CircularProgressIndicator())
+            const SliverFillRemaining(
+              child: Center(child: CircularProgressIndicator()),
+            )
           else if (errorMessage.isNotEmpty)
-            Center(child: Text(errorMessage))
+            SliverFillRemaining(child: Center(child: Text(errorMessage)))
           else if (weatherData != null)
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: FadeTransition(
-                  opacity: _animation,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildWeatherInfoRow(
-                        'Location:',
-                        '${weatherData!['location']['name']}, ${weatherData!['location']['region']}, ${weatherData!['location']['country']}',
+            SliverToBoxAdapter(
+              child: FadeTransition(
+                opacity: _animation,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildWeatherCard(),
+                    const SizedBox(height: 20),
+                    if (savedCitiesWeatherData.isNotEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Text(
+                          'Saved Cities:',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                      _buildWeatherInfoRow(
-                        'Latitude:',
-                        '${weatherData!['location']['lat']}',
-                      ),
-                      _buildWeatherInfoRow(
-                        'Longitude:',
-                        '${weatherData!['location']['lon']}',
-                      ),
-                      _buildWeatherInfoRow(
-                        'Local Time:',
-                        '${weatherData!['location']['localtime']}',
-                      ),
-                      const SizedBox(height: 20),
-                      _buildWeatherInfoRow(
-                        'Temperature:',
-                        '${weatherData!['current']['temp_c']} °C / ${weatherData!['current']['temp_f']} °F',
-                      ),
-                      _buildWeatherInfoRow(
-                        'Condition:',
-                        '${weatherData!['current']['condition']['text']}',
-                      ),
-                      Image.network(
-                        'https:${weatherData!['current']['condition']['icon']}',
-                      ),
-                      _buildWeatherInfoRow(
-                        'Wind:',
-                        '${weatherData!['current']['wind_mph']} mph / ${weatherData!['current']['wind_kph']} kph, Direction: ${weatherData!['current']['wind_dir']}',
-                      ),
-                      _buildWeatherInfoRow(
-                        'Pressure:',
-                        '${weatherData!['current']['pressure_mb']} mb / ${weatherData!['current']['pressure_in']} in',
-                      ),
-                      _buildWeatherInfoRow(
-                        'Precipitation:',
-                        '${weatherData!['current']['precip_mm']} mm / ${weatherData!['current']['precip_in']} in',
-                      ),
-                      _buildWeatherInfoRow(
-                        'Humidity:',
-                        '${weatherData!['current']['humidity']}%',
-                      ),
-                      _buildWeatherInfoRow(
-                        'Cloud:',
-                        '${weatherData!['current']['cloud']}%',
-                      ),
-                      _buildWeatherInfoRow(
-                        'Feels Like:',
-                        '${weatherData!['current']['feelslike_c']} °C / ${weatherData!['current']['feelslike_f']} °F',
-                      ),
-                      _buildWeatherInfoRow(
-                        'Wind Chill:',
-                        '${weatherData!['current']['windchill_c']} °C / ${weatherData!['current']['windchill_f']} °F',
-                      ),
-                      _buildWeatherInfoRow(
-                        'Heat Index:',
-                        '${weatherData!['current']['heatindex_c']} °C / ${weatherData!['current']['heatindex_f']} °F',
-                      ),
-                      _buildWeatherInfoRow(
-                        'Dew Point:',
-                        '${weatherData!['current']['dewpoint_c']} °C / ${weatherData!['current']['dewpoint_f']} °F',
-                      ),
-                      _buildWeatherInfoRow(
-                        'Visibility:',
-                        '${weatherData!['current']['vis_km']} km / ${weatherData!['current']['vis_miles']} miles',
-                      ),
-                      _buildWeatherInfoRow(
-                        'UV Index:',
-                        '${weatherData!['current']['uv']}',
-                      ),
-                      _buildWeatherInfoRow(
-                        'Gust:',
-                        '${weatherData!['current']['gust_mph']} mph / ${weatherData!['current']['gust_kph']} kph',
-                      ),
-                    ],
-                  ),
+                    ...savedCitiesWeatherData
+                        .map((cityWeather) => _buildSavedCityCard(cityWeather))
+                        .toList(),
+                  ],
                 ),
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildWeatherCard() {
+    return Card(
+      margin: const EdgeInsets.all(16.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${weatherData!['location']['name']}, ${weatherData!['location']['region']}, ${weatherData!['location']['country']}',
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            _buildWeatherInfoRow(
+              'Temperature:',
+              '${weatherData!['current']['temp_c']} °C / ${weatherData!['current']['temp_f']} °F',
+            ),
+            _buildWeatherInfoRow(
+              'Condition:',
+              '${weatherData!['current']['condition']['text']}',
+            ),
+            Image.network(
+              'https:${weatherData!['current']['condition']['icon']}',
+            ),
+            _buildWeatherInfoRow(
+              'Wind:',
+              '${weatherData!['current']['wind_mph']} mph / ${weatherData!['current']['wind_kph']} kph, Direction: ${weatherData!['current']['wind_dir']}',
+            ),
+            _buildWeatherInfoRow(
+              'Humidity:',
+              '${weatherData!['current']['humidity']}%',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSavedCityCard(Map<String, dynamic> cityWeather) {
+    return Card(
+      margin: const EdgeInsets.all(16.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${cityWeather['location']['name']}, ${cityWeather['location']['region']}, ${cityWeather['location']['country']}',
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            _buildWeatherInfoRow(
+              'Temperature:',
+              '${cityWeather['current']['temp_c']} °C / ${cityWeather['current']['temp_f']} °F',
+            ),
+            _buildWeatherInfoRow(
+              'Condition:',
+              '${cityWeather['current']['condition']['text']}',
+            ),
+            Image.network(
+              'https:${cityWeather['current']['condition']['icon']}',
+            ),
+            _buildWeatherInfoRow(
+              'Wind:',
+              '${cityWeather['current']['wind_mph']} mph / ${cityWeather['current']['wind_kph']} kph, Direction: ${cityWeather['current']['wind_dir']}',
+            ),
+            _buildWeatherInfoRow(
+              'Humidity:',
+              '${cityWeather['current']['humidity']}%',
+            ),
+          ],
+        ),
       ),
     );
   }
